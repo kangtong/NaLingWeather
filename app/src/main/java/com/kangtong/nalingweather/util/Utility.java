@@ -1,9 +1,11 @@
 package com.kangtong.nalingweather.util;
 
 import android.text.TextUtils;
+import com.google.gson.Gson;
 import com.kangtong.nalingweather.db.City;
 import com.kangtong.nalingweather.db.County;
 import com.kangtong.nalingweather.db.Province;
+import com.kangtong.nalingweather.model.HeWeather5;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -70,5 +72,13 @@ public class Utility {
       }
     }
     return false;
+  }
+
+  public static HeWeather5 handleWeatherResponse(String response) {
+    return new Gson().fromJson(response, HeWeather5.class);
+  }
+
+  public static String handleWeatherString(HeWeather5 heWeather5) {
+    return new Gson().toJson(heWeather5);
   }
 }

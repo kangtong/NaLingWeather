@@ -1,6 +1,7 @@
 package com.kangtong.nalingweather;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -13,6 +14,10 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
+import butterknife.Unbinder;
 import com.kangtong.nalingweather.db.City;
 import com.kangtong.nalingweather.db.County;
 import com.kangtong.nalingweather.db.Province;
@@ -34,8 +39,10 @@ public class ChooseAreaFragment extends Fragment {
   public static final int LEVEL_PROVINCE = 0;
   public static final int LEVEL_CITY = 1;
   public static final int LEVEL_COUNTY = 2;
-  private TextView titleText;
-  private Button backButton;
+  @BindView(R.id.title_text) TextView titleText;
+  @BindView(R.id.back_button) Button backButton;
+  @BindView(R.id.list_view) ListView listView;
+  Unbinder unbinder;
   private ProgressDialog progressDialog;
   private ArrayAdapter<String> adapter;
   private List<String> dataList = new ArrayList<>();
@@ -45,16 +52,13 @@ public class ChooseAreaFragment extends Fragment {
   private Province selectedProvince;
   private City selectedCity;
   private int currentLevel;
-  private ListView listView;
 
   @Nullable @Override
   public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
       Bundle savedInstanceState) {
     View view = inflater.inflate(R.layout.choose_area, container, false);
+    unbinder = ButterKnife.bind(this, view);
     adapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_list_item_1, dataList);
-    listView = (ListView) view.findViewById(R.id.list_view);
-    titleText = (TextView) view.findViewById(R.id.title_text);
-    backButton = (Button) view.findViewById(R.id.back_button);
     listView.setAdapter(adapter);
     return view;
   }
@@ -69,15 +73,12 @@ public class ChooseAreaFragment extends Fragment {
         } else if (currentLevel == LEVEL_CITY) {
           selectedCity = cityList.get(i);
           queryCounties();
-        }
-      }
-    });
-    backButton.setOnClickListener(new View.OnClickListener() {
-      @Override public void onClick(View view) {
-        if (currentLevel == LEVEL_COUNTY) {
-          queryCities();
-        } else if (currentLevel == LEVEL_CITY) {
-          queryProvinces();
+        } else if (currentLevel == LEVEL_COUNTY) {
+          String weatherId = countyList.get(i).getWeatherId();
+          Intent intent = new Intent(getActivity(), WeatherActivity.class);
+          intent.putExtra("weather_id", weatherId);
+          startActivity(intent);
+          getActivity().finish();
         }
       }
     });
@@ -195,6 +196,19 @@ public class ChooseAreaFragment extends Fragment {
   private void closeProgressDialog() {
     if (progressDialog != null) {
       progressDialog.dismiss();
+    }
+  }
+
+  @Override public void onDestroyView() {
+    super.onDestroyView();
+    unbinder.unbind();
+  }
+
+  @OnClick(R.id.back_button) public void onViewClicked() {
+    if (currentLevel == LEVEL_COUNTY) {
+      queryCities();
+    } else if (currentLevel == LEVEL_CITY) {
+      queryProvinces();
     }
   }
 }
