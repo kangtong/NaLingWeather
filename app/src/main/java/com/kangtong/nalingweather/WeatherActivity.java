@@ -1,17 +1,23 @@
 package com.kangtong.nalingweather;
 
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import com.bumptech.glide.Glide;
 import com.kangtong.nalingweather.model.HeWeather5;
 import com.kangtong.nalingweather.service.ApiService;
 import com.kangtong.nalingweather.service.HeWeatherService;
@@ -34,25 +40,48 @@ public class WeatherActivity extends AppCompatActivity {
   @BindView(R.id.car_wash_text) TextView carWashText;
   @BindView(R.id.sport_text) TextView sportText;
   @BindView(R.id.weather_layout) ScrollView weatherLayout;
+  @BindView(R.id.bing_pic_img) ImageView bingPicImg;
+  @BindView(R.id.layout_aqi) LinearLayout layoutAqi;
+  @BindView(R.id.swipe_refresh) SwipeRefreshLayout swipeRefresh;
 
   private HeWeatherService mHeWeatherService;
-
+  private String weatherId;
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    Window window = getWindow();
+    window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
+        | WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+    window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+    window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+    window.setStatusBarColor(Color.TRANSPARENT);
+    window.setNavigationBarColor(Color.TRANSPARENT);
     setContentView(R.layout.activity_weather);
     ButterKnife.bind(this);
     SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-    String weatherString = preferences.getString("weather", null);
+    final String weatherString = preferences.getString("weather", null);
     mHeWeatherService = ApiService.createHeWeatherService();
+
     if (weatherString != null) {
       HeWeather5 heWeather5 = Utility.handleWeatherResponse(weatherString);
+      weatherId = heWeather5.getHeWeather5().get(0).getBasic().getId();
       showWeather(heWeather5.getHeWeather5().get(0));
     } else {
-      String weatherId = getIntent().getStringExtra("weather_id");
+      weatherId = getIntent().getStringExtra("weather_id");
       weatherLayout.setVisibility(View.INVISIBLE);
       requestWeather(weatherId);
     }
+    swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+      @Override public void onRefresh() {
+        requestWeather(weatherId);
+      }
+    });
+    Glide.with(this)
+        .load("https://unsplash.it/720/1280/?random")
+        .placeholder(R.drawable.background)
+        .into(bingPicImg);
   }
 
   public void requestWeather(final String weatherId) {
@@ -64,10 +93,12 @@ public class WeatherActivity extends AppCompatActivity {
         editor.putString("weather", Utility.handleWeatherString(response.body()));
         editor.apply();
         showWeather(response.body().getHeWeather5().get(0));
+        swipeRefresh.setRefreshing(false);
       }
 
       @Override public void onFailure(Call<HeWeather5> call, Throwable t) {
         Log.d("key", t.getMessage());
+        swipeRefresh.setRefreshing(false);
       }
     });
   }
@@ -94,6 +125,8 @@ public class WeatherActivity extends AppCompatActivity {
     if (heWeather5Bean.getAqi() != null) {
       aqiText.setText(heWeather5Bean.getAqi().getCity().getAqi());
       pm25Text.setText(heWeather5Bean.getAqi().getCity().getPm25());
+    } else {
+      layoutAqi.setVisibility(View.GONE);
     }
     comfortText.setText("舒适度：" + heWeather5Bean.getSuggestion().getComf().getTxt());
     carWashText.setText("洗车指数：" + heWeather5Bean.getSuggestion().getCw().getTxt());
