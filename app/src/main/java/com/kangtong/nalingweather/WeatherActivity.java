@@ -4,6 +4,8 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -17,6 +19,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 import com.bumptech.glide.Glide;
 import com.kangtong.nalingweather.model.HeWeather5;
 import com.kangtong.nalingweather.service.ApiService;
@@ -43,9 +46,11 @@ public class WeatherActivity extends AppCompatActivity {
   @BindView(R.id.bing_pic_img) ImageView bingPicImg;
   @BindView(R.id.layout_aqi) LinearLayout layoutAqi;
   @BindView(R.id.swipe_refresh) SwipeRefreshLayout swipeRefresh;
+  @BindView(R.id.drawer_layout) DrawerLayout drawerLayout;
 
   private HeWeatherService mHeWeatherService;
   private String weatherId;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -132,5 +137,9 @@ public class WeatherActivity extends AppCompatActivity {
     carWashText.setText("洗车指数：" + heWeather5Bean.getSuggestion().getCw().getTxt());
     sportText.setText("运动建议：" + heWeather5Bean.getSuggestion().getSport().getTxt());
     weatherLayout.setVisibility(View.VISIBLE);
+  }
+
+  @OnClick(R.id.nav_button) public void onViewClicked() {
+    drawerLayout.openDrawer(GravityCompat.START);
   }
 }
